@@ -1,4 +1,6 @@
-﻿namespace Quiz_API.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Quiz_API.Models
 {
   public class Card
   {
