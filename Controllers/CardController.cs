@@ -8,23 +8,55 @@ namespace Quiz_API.Controllers
   [ApiController]
   public class CardController : ControllerBase
   {
-    public static List<Card> cards = new List<Card>()
+    private ApplicationDbContext _context;
+    public CardController(ApplicationDbContext context)
     {
-      new Card(){cardId="001", question="A"},
-      new Card(){cardId="002", question="B"},
-      new Card(){cardId="003", question="C"}
-    };
+      _context = context;
+    }
 
     [HttpGet]
-    public List<Card> GetCards()
+    public IEnumerable<Card> GetCards()
     {
-      return cards;
+      return _context.Cards.ToList();
     }
 
     [HttpPost]
-    public void PostCard()
+    public IActionResult AddCard(Card card)
     {
-      cards.Add(new Card() { cardId = "005", question="E" });
+      try
+      {
+        _context.Cards.Add(card);
+        _context.SaveChanges();
+        return StatusCode(StatusCodes.Status201Created, card);
+      }
+      catch (Exception)
+      {
+        return StatusCode(StatusCodes.Status500InternalServerError);
+      }
     }
+
+    [HttpGet("{id}")]
+    public Card Get(string id)
+    {
+      return _context.Cards.Find(id);
+    }
+
+    [HttpPut]
+    public IActionResult UpdateCard(string id, Card card)
+    {
+      try
+      {
+        if (new Guid(id) != card.CardId)
+          return StatusCode(StatusCodes.Status400BadRequest);
+        _context.Cards.Update(card);
+        _context.SaveChanges();
+        return StatusCode(StatusCodes.Status200OK);
+      }
+      catch (Exception e)
+      {
+        return StatusCode(StatusCodes.Status500InternalServerError);
+      }
+    }
+
   }
 }
