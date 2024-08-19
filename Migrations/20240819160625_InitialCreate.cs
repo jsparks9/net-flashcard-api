@@ -35,7 +35,7 @@ namespace Quiz_API.Migrations
                     card_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     quiz_text = table.Column<string>(type: "nvarchar(255)", nullable: false),
                     answers = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    image = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    image = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -71,6 +71,7 @@ namespace Quiz_API.Migrations
                 columns: table => new
                 {
                     user_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    username = table.Column<string>(type: "nvarchar(16)", nullable: false),
                     user_pwd = table.Column<string>(type: "nvarchar(128)", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime", nullable: false)
                 },

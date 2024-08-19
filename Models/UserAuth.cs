@@ -11,6 +11,10 @@ namespace Quiz_API.Models
     public Guid UserId { get; set; }
 
     [Required]
+    [Column("username", TypeName = "nvarchar(16)")]
+    public string Username { get; set; }
+
+    [Required]
     [Column("user_pwd", TypeName = "nvarchar(128)")]
     public string UserPwd { get; set; }
 
