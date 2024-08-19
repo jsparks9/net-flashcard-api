@@ -12,7 +12,7 @@ using Quiz_API.Models;
 namespace Quiz_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240816045321_InitialCreate")]
+    [Migration("20240819160625_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -80,7 +80,6 @@ namespace Quiz_API.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<byte[]>("Image")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)")
                         .HasColumnName("image");
 
@@ -174,6 +173,11 @@ namespace Quiz_API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(128)")
                         .HasColumnName("user_pwd");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(16)")
+                        .HasColumnName("username");
 
                     b.HasKey("UserId");
 

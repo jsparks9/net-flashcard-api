@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Quiz_API.Models;
+using Quiz_API.Models.DTOs;
+using Quiz_API.Services;
 
 namespace Quiz_API.Controllers
 {
@@ -9,9 +10,11 @@ namespace Quiz_API.Controllers
   public class CardController : ControllerBase
   {
     private ApplicationDbContext _context;
-    public CardController(ApplicationDbContext context)
+    private readonly IAuthService _authService;
+    public CardController(ApplicationDbContext context, IAuthService authService)
     {
       _context = context;
+      _authService = authService;
     }
 
     [HttpGet]
@@ -21,21 +24,35 @@ namespace Quiz_API.Controllers
     }
 
     [HttpPost]
-    public IActionResult AddCard(Card card)
+    public IActionResult CreateCard([FromBody] CreateCardModel createCardModel)
     {
-      try
+      if (createCardModel == null || createCardModel.Answers == null || createCardModel.Answers.Length == 0)
       {
-        _context.Cards.Add(card);
-        _context.SaveChanges();
-        return StatusCode(StatusCodes.Status201Created, card);
+        return BadRequest("Invalid client request");
       }
-      catch (Exception)
+
+      var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+      if (string.IsNullOrEmpty(token))
+        return Unauthorized("Authorization token is missing or invalid.");
+
+      var appUser = _authService.GetUserFromToken(token);
+      if (appUser == null)
+        return Unauthorized();
+
+      var newCard = new Card
       {
-        return StatusCode(StatusCodes.Status500InternalServerError);
-      }
+        CardId = Guid.NewGuid(),
+        QuizText = createCardModel.QuizText,
+        Answers = createCardModel.Answers[0] // TODO: save ans properly and add image
+      };
+
+      _context.Cards.Add(newCard);
+      _context.SaveChanges();
+
+      return Ok("Card created successfully");
     }
 
-    [HttpGet("{id}")]
+  [HttpGet("{id}")]
     public Card Get(string id)
     {
       return _context.Cards.Find(id);
@@ -52,11 +69,12 @@ namespace Quiz_API.Controllers
         _context.SaveChanges();
         return StatusCode(StatusCodes.Status200OK);
       }
-      catch (Exception e)
+      catch
       {
         return StatusCode(StatusCodes.Status500InternalServerError);
       }
     }
+  
 
   }
 }

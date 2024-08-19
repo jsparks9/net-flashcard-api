@@ -19,7 +19,7 @@ namespace Quiz_API.Models
     public string Answers { get; set; }
 
     [Column("image", TypeName = "varbinary(max)")]
-    public byte[] Image { get; set; }
+    public byte[]? Image { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.Now;
