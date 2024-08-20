@@ -9,5 +9,7 @@ namespace Quiz_API.Services
     IEnumerable<DeckRespDto> GetMyDecks(string authHeader);
     DeckRespDto GetDeckById(string id);
     DeckRespDto CreateDeck(CreateDeckModel createDeckModel, string authHeader);
+    CardRespDto AddCardToDeck(string id, CreateCardModel createCardModel, string authHeader);
+    void RemoveCardFromDeck(string deckId, string cardId, string authHeader);
   }
 }

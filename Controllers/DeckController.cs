@@ -9,7 +9,8 @@ namespace Quiz_API.Controllers
   public class DeckController : ControllerBase
   {
     private readonly IDeckService _deckService;
-    public DeckController(IDeckService deckService) {
+    public DeckController(IDeckService deckService)
+    {
       _deckService = deckService;
     }
 
@@ -38,15 +39,34 @@ namespace Quiz_API.Controllers
       return _deckService.GetDeckById(id);
     }
 
-
-
     [HttpPost]
     public DeckRespDto CreateDeck(
-      CreateDeckModel createDeckModel,
+      [FromBody] CreateDeckModel createDeckModel,
       [FromHeader(Name = "Authorization")] string authHeader
       )
     {
       return _deckService.CreateDeck(createDeckModel, authHeader);
+    }
+
+    [HttpPost("deck/{id}")]
+    public CardRespDto AddCardToDeck(
+      string id,
+      [FromBody] CreateCardModel createCardModel,
+      [FromHeader(Name = "Authorization")] string authHeader
+      )
+    {
+      return _deckService.AddCardToDeck(id, createCardModel, authHeader);
+    }
+
+    [HttpDelete("deck/{deckId}/card/{cardId}")]
+    public IActionResult RemoveCardFromDeck(
+      string deckId,
+      string cardId,
+      [FromHeader(Name = "Authorization")] string authHeader
+      )
+    {
+      _deckService.RemoveCardFromDeck(deckId, cardId, authHeader);
+      return NoContent();
     }
   }
 }
