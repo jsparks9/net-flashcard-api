@@ -43,9 +43,17 @@ namespace Quiz_API.Controllers
       )
     {
       _cardService.UpdateCard(id, cardUpdates, authHeader);
-      return Ok();
+      return NoContent();
     }
-  
 
+    [HttpDelete("{id}")]
+    public IActionResult DeleteCard(
+      string id,
+      [FromHeader(Name = "Authorization")] string authHeader
+      )
+    {
+      _cardService.DeleteCard(id, authHeader);
+      return NoContent();
+    }
   }
 }
