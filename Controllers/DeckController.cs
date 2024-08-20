@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Quiz_API.Models;
 using Quiz_API.Models.DTOs;
 using Quiz_API.Services;
 
@@ -68,5 +69,17 @@ namespace Quiz_API.Controllers
       _deckService.RemoveCardFromDeck(deckId, cardId, authHeader);
       return NoContent();
     }
+
+    [HttpPatch("{id}")]
+    public IActionResult UpdateDeck (
+      string id,
+      [FromBody] UpdateDeckDto updateDeckDto,
+      [FromHeader(Name = "Authorization")] string authHeader
+      )
+    {
+      _deckService.UpdateDeck(id, updateDeckDto, authHeader);
+      return NoContent();
+    }
+
   }
 }

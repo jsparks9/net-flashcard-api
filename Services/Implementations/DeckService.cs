@@ -137,8 +137,7 @@ namespace Quiz_API.Services
     public CardRespDto AddCardToDeck(string id, CreateCardModel createCardModel, string authHeader)
     {
       var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
-      if (userInfo == null)
-        throw new Exception("500");
+      if (userInfo == null) throw new Exception("500");
 
       var deckId = new Guid(id);
       var deck = _context.QuizDecks
@@ -215,6 +214,32 @@ namespace Quiz_API.Services
       return;
     }
 
+    public void UpdateDeck(string id, UpdateDeckDto updateDeckDto, string authHeader)
+    {
+      var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
+      if (userInfo == null) throw new Exception("500");
+
+      if (id == null || id.Length < 1)
+        throw new Exception("Deck ID not Valid");
+
+      var deckId = new Guid(id);
+      var deck = _context.QuizDecks
+        .Include(d => d.DeckCards)
+        .ThenInclude(dc => dc.Card)
+        .FirstOrDefault(d => d.DeckId == deckId);
+      if (deck == null) throw new Exception("Deck not found.");
+      if (deck.UserId != userInfo.UserId) throw new Exception("Not auth");
+
+      if (updateDeckDto.DeckName != null && updateDeckDto.DeckName.Length > 0)
+        deck.DeckName = updateDeckDto.DeckName;
+      if (updateDeckDto.Description != null && updateDeckDto.Description.Length > 0)
+        deck.Description = updateDeckDto.Description;
+
+      _context.QuizDecks.Update(deck);
+      _context.SaveChanges();
+
+      return;
+    }
 
   }
 }
