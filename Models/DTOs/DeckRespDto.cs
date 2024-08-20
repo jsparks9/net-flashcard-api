@@ -17,7 +17,10 @@ namespace Quiz_API.Models.DTOs
       DeckName = deck.DeckName;
       Description = deck.Description;
       CreatedAt = deck.CreatedAt;
-      Cards = deck.Cards.Select(card => new CardRespDto(card, user)).ToList();
+      Cards = deck.DeckCards
+                .Where(deckCard => deckCard.Card != null) // Ensure that the Card is not null
+                .Select(deckCard => new CardRespDto(deckCard.Card, user))
+                .ToList();
     }
 
   }

@@ -30,5 +30,7 @@ namespace Quiz_API.Models
 
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+    public virtual ICollection<DeckCard> DeckCards { get; set; }
   }
 }

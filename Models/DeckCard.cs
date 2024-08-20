@@ -7,12 +7,10 @@ namespace Quiz_API.Models
   public class DeckCard
   {
     [Key]
-    [ForeignKey("QuizDeck")]
     [Column("deck_id", Order = 0, TypeName = "uniqueidentifier")]
     public Guid DeckId { get; set; }
 
     [Key]
-    [ForeignKey("Card")]
     [Column("card_id", Order = 1, TypeName = "uniqueidentifier")]
     public Guid CardId { get; set; }
 
@@ -21,7 +19,10 @@ namespace Quiz_API.Models
     public int OrderIndex { get; set; }
 
     // Navigation properties
+    [ForeignKey("DeckId")]
     public virtual QuizDeck QuizDeck { get; set; }
+
+    [ForeignKey("CardId")]
     public virtual Card Card { get; set; }
   }
 }

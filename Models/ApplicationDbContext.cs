@@ -13,13 +13,18 @@ namespace Quiz_API.Models
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-      // Add any specific configurations here if necessary
       modelBuilder.Entity<DeckCard>()
           .HasKey(dc => new { dc.DeckId, dc.CardId });
 
       modelBuilder.Entity<DeckCard>()
-          .HasIndex(dc => new { dc.DeckId, dc.OrderIndex })
-          .IsUnique();
+        .HasOne(dc => dc.QuizDeck)
+        .WithMany(qd => qd.DeckCards)
+        .HasForeignKey(dc => dc.DeckId);
+
+      modelBuilder.Entity<DeckCard>()
+          .HasOne(dc => dc.Card)
+          .WithMany(c => c.DeckCards)
+          .HasForeignKey(dc => dc.CardId);
 
       base.OnModelCreating(modelBuilder);
     }
