@@ -18,6 +18,7 @@ namespace Quiz_API.Migrations
                     user_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     full_name = table.Column<string>(type: "nvarchar(100)", nullable: false),
                     email = table.Column<string>(type: "nvarchar(255)", nullable: false),
+                    email_confirmed = table.Column<bool>(type: "bit", nullable: false),
                     date_of_birth = table.Column<DateTime>(type: "date", nullable: true),
                     registration_date = table.Column<DateTime>(type: "datetime", nullable: false),
                     last_login = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -26,22 +27,6 @@ namespace Quiz_API.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_app_user", x => x.user_id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "quiz_card",
-                columns: table => new
-                {
-                    card_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    quiz_text = table.Column<string>(type: "nvarchar(255)", nullable: false),
-                    answers = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    image = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_quiz_card", x => x.card_id);
                 });
 
             migrationBuilder.CreateTable(
@@ -87,6 +72,29 @@ namespace Quiz_API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "quiz_card",
+                columns: table => new
+                {
+                    card_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    user_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    quiz_text = table.Column<string>(type: "nvarchar(255)", nullable: false),
+                    answer = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    image = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    QuizDeckDeckId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_quiz_card", x => x.card_id);
+                    table.ForeignKey(
+                        name: "FK_quiz_card_quiz_deck_QuizDeckDeckId",
+                        column: x => x.QuizDeckDeckId,
+                        principalTable: "quiz_deck",
+                        principalColumn: "deck_id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "deck_cards",
                 columns: table => new
                 {
@@ -121,6 +129,11 @@ namespace Quiz_API.Migrations
                 table: "deck_cards",
                 columns: new[] { "deck_id", "order_index" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_quiz_card_QuizDeckDeckId",
+                table: "quiz_card",
+                column: "QuizDeckDeckId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_quiz_deck_user_id",

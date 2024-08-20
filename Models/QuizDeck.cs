@@ -15,7 +15,7 @@ namespace Quiz_API.Models
     public string DeckName { get; set; }
 
     [ForeignKey("AppUser")]
-    [Column("user_id", TypeName = "uniqueidentifier")]
+    [Column("user_id")]
     public Guid UserId { get; set; }
 
     [Column("description", TypeName = "nvarchar(max)")]
@@ -29,5 +29,6 @@ namespace Quiz_API.Models
 
     // Navigation property
     public virtual AppUser AppUser { get; set; }
+    public virtual ICollection<Card> Cards { get; set; } = new List<Card>();
   }
 }

@@ -11,15 +11,19 @@ namespace Quiz_API.Models
     [Column("card_id", TypeName = "uniqueidentifier")]
     public Guid CardId { get; set; } = Guid.NewGuid();
 
+    [ForeignKey("AppUser")]
+    [Column("user_id")]
+    public Guid UserId { get; set; }
+
     [Column("quiz_text", TypeName = "nvarchar(255)")]
     public string QuizText { get; set; }
 
     [Required]
-    [Column("answers", TypeName = "nvarchar(max)")]
-    public string Answers { get; set; }
+    [Column("answer", TypeName = "nvarchar(max)")]
+    public string Answer { get; set; }
 
     [Column("image", TypeName = "varbinary(max)")]
-    public byte[]? Image { get; set; }
+    public string? Image { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.Now;
