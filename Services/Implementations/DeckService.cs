@@ -121,6 +121,69 @@ namespace Quiz_API.Services
       return new DeckRespDto(newDeck, username);
     }
 
+    public CardRespDto AddCardToDeck(string id, CreateCardModel createCardModel, string authHeader)
+    {
+      var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
+      if (userInfo == null)
+        throw new Exception("500");
+
+      var deckId = new Guid(id);
+      var deck = _context.QuizDecks.Include(d => d.Cards).FirstOrDefault(d => d.DeckId == deckId);
+      if (deck == null) throw new Exception("Deck not found.");
+      if (deck.UserId != userInfo.UserId) throw new Exception("Not auth");
+      Card cardToAdd = null;
+
+      if (createCardModel.CardId != null)
+      {
+        var cardId = new Guid(createCardModel.CardId);
+        var existingCard = _context.Cards.FirstOrDefault(c => c.CardId == cardId);
+        if (existingCard != null && existingCard.UserId == userInfo.UserId && 
+          existingCard.QuizText == createCardModel.QuizText && existingCard.Answer == createCardModel.Answer
+          && existingCard.Image == createCardModel.Image)
+        {
+          cardToAdd = existingCard;
+        }
+      }
+
+      if (cardToAdd == null)
+      {
+        cardToAdd = new Card()
+        {
+          CardId = Guid.NewGuid(),
+          UserId = userInfo.UserId,
+          QuizText = createCardModel.QuizText,
+          Answer = createCardModel.Answer,
+          Image = createCardModel.Image
+        };
+        _context.Cards.Add(cardToAdd);
+      }
+      deck.Cards.Add(cardToAdd);
+      _context.SaveChanges();
+
+      return new CardRespDto(cardToAdd, userInfo.Username);
+    }
+
+    public void RemoveCardFromDeck(string deckId, string cardId, string authHeader)
+    {
+      var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
+      if (userInfo == null) throw new Exception("500");
+
+      var deckGuid = new Guid(deckId);
+      var cardGuid = new Guid(cardId);
+
+      var deck = _context.QuizDecks.Include(d => d.Cards).FirstOrDefault(d => d.DeckId == deckGuid);
+      if (deck == null) throw new Exception("Deck not found.");
+      if (deck.UserId != userInfo.UserId) throw new Exception("Not authorized");
+
+      var cardToRemove = deck.Cards.FirstOrDefault(c => c.CardId == cardGuid);
+      if (cardToRemove == null)
+        throw new Exception("Card not found in deck.");
+
+      deck.Cards.Remove(cardToRemove);
+      _context.SaveChanges();
+
+      return;
+    }
 
 
   }
