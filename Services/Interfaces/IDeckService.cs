@@ -1,4 +1,5 @@
-﻿using Quiz_API.Models.DTOs;
+﻿using Microsoft.AspNetCore.Mvc;
+using Quiz_API.Models.DTOs;
 
 namespace Quiz_API.Services
 {
@@ -11,5 +12,6 @@ namespace Quiz_API.Services
     DeckRespDto CreateDeck(CreateDeckModel createDeckModel, string authHeader);
     CardRespDto AddCardToDeck(string id, CreateCardModel createCardModel, string authHeader);
     void RemoveCardFromDeck(string deckId, string cardId, string authHeader);
+    void UpdateDeck(string id, UpdateDeckDto updateDeckDto, string authHeader);
   }
 }
