@@ -30,7 +30,7 @@ namespace Quiz_API.Controllers
     }
 
     [HttpGet("{id}")]
-    public CardRespDto Get(string id)
+    public CardRespDto GetCardById(string id)
     {
       return _cardService.GetCardById(id);
     }

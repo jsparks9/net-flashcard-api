@@ -1,5 +1,6 @@
 ﻿using Quiz_API.Models.DTOs;
 using Quiz_API.Models;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace Quiz_API.Services
@@ -21,6 +22,7 @@ namespace Quiz_API.Services
     public IEnumerable<DeckRespDto> GetDecks()
     {
       return _context.QuizDecks
+        .Include(deck => deck.Cards) // Eagerly load the Cards
         .Select(deck => new DeckRespDto(
             deck,
             _context.UserAuths
@@ -29,6 +31,58 @@ namespace Quiz_API.Services
                 .FirstOrDefault()
         ))
         .ToList();
+    }
+
+    public IEnumerable<DeckRespDto> GetDecksByUsername(string username)
+    {
+      var userId = _context.UserAuths
+        .Where(user => user.Username == username)
+        .Select(user => user.UserId)
+        .FirstOrDefault();
+
+      if (userId == null)
+        return Enumerable.Empty<DeckRespDto>();
+
+      return _context.QuizDecks
+        .Where(deck => deck.UserId == userId)
+        .Include(deck => deck.Cards) // Eagerly load the Cards
+        .Select(deck => new DeckRespDto(deck, username))
+        .ToList();
+    }
+
+    public IEnumerable<DeckRespDto> GetMyDecks(string authHeader)
+    {
+      var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
+      if (userInfo == null)
+        throw new Exception("Not Auth'd");
+      var userId = userInfo.UserId;
+      if (userId == null)
+        return Enumerable.Empty<DeckRespDto>();
+
+      return _context.QuizDecks
+        .Where(deck => deck.UserId == userId)
+        .Include(deck => deck.Cards) // Eagerly load the Cards
+        .Select(deck => new DeckRespDto(deck, userInfo.Username))
+        .ToList();
+    }
+
+    public DeckRespDto GetDeckById(string id)
+    {
+      var deckId = new Guid(id);
+
+      var deck = _context.QuizDecks
+        .Where(deck => deck.DeckId == deckId)
+        .Include(deck => deck.Cards) // Eagerly load the Cards
+        .Select(deck => new DeckRespDto(
+            deck,
+            _context.UserAuths
+                .Where(user => user.UserId == deck.UserId)
+                .Select(user => user.Username)
+                .FirstOrDefault()
+        ))
+        .FirstOrDefault();
+
+      return deck;
     }
 
     public DeckRespDto CreateDeck(CreateDeckModel createDeckModel, string authHeader)
