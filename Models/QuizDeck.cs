@@ -29,6 +29,6 @@ namespace Quiz_API.Models
 
     // Navigation property
     public virtual AppUser AppUser { get; set; }
-    public virtual ICollection<Card> Cards { get; set; } = new List<Card>();
+    public virtual ICollection<DeckCard> DeckCards { get; set; }
   }
 }

@@ -12,7 +12,7 @@ using Quiz_API.Models;
 namespace Quiz_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240820021830_InitialCreate")]
+    [Migration("20240820193154_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -87,9 +87,6 @@ namespace Quiz_API.Migrations
                         .HasColumnType("varbinary(max)")
                         .HasColumnName("image");
 
-                    b.Property<Guid?>("QuizDeckDeckId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("QuizText")
                         .IsRequired()
                         .HasColumnType("nvarchar(255)")
@@ -104,8 +101,6 @@ namespace Quiz_API.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("CardId");
-
-                    b.HasIndex("QuizDeckDeckId");
 
                     b.ToTable("quiz_card");
                 });
@@ -129,9 +124,6 @@ namespace Quiz_API.Migrations
                     b.HasKey("DeckId", "CardId");
 
                     b.HasIndex("CardId");
-
-                    b.HasIndex("DeckId", "OrderIndex")
-                        .IsUnique();
 
                     b.ToTable("deck_cards");
                 });
@@ -197,23 +189,16 @@ namespace Quiz_API.Migrations
                     b.ToTable("user_auth");
                 });
 
-            modelBuilder.Entity("Quiz_API.Models.Card", b =>
-                {
-                    b.HasOne("Quiz_API.Models.QuizDeck", null)
-                        .WithMany("Cards")
-                        .HasForeignKey("QuizDeckDeckId");
-                });
-
             modelBuilder.Entity("Quiz_API.Models.DeckCard", b =>
                 {
                     b.HasOne("Quiz_API.Models.Card", "Card")
-                        .WithMany()
+                        .WithMany("DeckCards")
                         .HasForeignKey("CardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Quiz_API.Models.QuizDeck", "QuizDeck")
-                        .WithMany()
+                        .WithMany("DeckCards")
                         .HasForeignKey("DeckId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -245,9 +230,14 @@ namespace Quiz_API.Migrations
                     b.Navigation("AppUser");
                 });
 
+            modelBuilder.Entity("Quiz_API.Models.Card", b =>
+                {
+                    b.Navigation("DeckCards");
+                });
+
             modelBuilder.Entity("Quiz_API.Models.QuizDeck", b =>
                 {
-                    b.Navigation("Cards");
+                    b.Navigation("DeckCards");
                 });
 #pragma warning restore 612, 618
         }

@@ -22,7 +22,8 @@ namespace Quiz_API.Services
     public IEnumerable<DeckRespDto> GetDecks()
     {
       return _context.QuizDecks
-        .Include(deck => deck.Cards) // Eagerly load the Cards
+        .Include(deck => deck.DeckCards) // Eagerly load the Cards
+        .ThenInclude(dc => dc.Card)
         .Select(deck => new DeckRespDto(
             deck,
             _context.UserAuths
@@ -45,7 +46,8 @@ namespace Quiz_API.Services
 
       return _context.QuizDecks
         .Where(deck => deck.UserId == userId)
-        .Include(deck => deck.Cards) // Eagerly load the Cards
+        .Include(deck => deck.DeckCards) // Eagerly load the Cards
+        .ThenInclude(dc => dc.Card)
         .Select(deck => new DeckRespDto(deck, username))
         .ToList();
     }
@@ -61,7 +63,8 @@ namespace Quiz_API.Services
 
       return _context.QuizDecks
         .Where(deck => deck.UserId == userId)
-        .Include(deck => deck.Cards) // Eagerly load the Cards
+        .Include(deck => deck.DeckCards) // Eagerly load the Cards
+        .ThenInclude(dc => dc.Card)
         .Select(deck => new DeckRespDto(deck, userInfo.Username))
         .ToList();
     }
@@ -72,7 +75,8 @@ namespace Quiz_API.Services
 
       var deck = _context.QuizDecks
         .Where(deck => deck.DeckId == deckId)
-        .Include(deck => deck.Cards) // Eagerly load the Cards
+        .Include(deck => deck.DeckCards) // Eagerly load the Cards
+        .ThenInclude(dc => dc.Card)
         .Select(deck => new DeckRespDto(
             deck,
             _context.UserAuths
@@ -107,11 +111,20 @@ namespace Quiz_API.Services
         _context.SaveChanges();
       }
 
+      var newId = Guid.NewGuid();
+      int i = 1;
+
       var newDeck = new QuizDeck
       {
+        DeckId = newId,
         DeckName = createDeckModel.DeckName,
         Description = createDeckModel.Description,
-        Cards = newCards,
+        DeckCards = newCards.Select(card => new DeckCard
+        {
+          CardId = card.CardId,
+          DeckId = newId,
+          OrderIndex = i++
+        }).ToList(),
         UserId = userInfo.UserId
       };
 
@@ -128,7 +141,10 @@ namespace Quiz_API.Services
         throw new Exception("500");
 
       var deckId = new Guid(id);
-      var deck = _context.QuizDecks.Include(d => d.Cards).FirstOrDefault(d => d.DeckId == deckId);
+      var deck = _context.QuizDecks
+        .Include(d => d.DeckCards)
+        .ThenInclude(dc => dc.Card)
+        .FirstOrDefault(d => d.DeckId == deckId);
       if (deck == null) throw new Exception("Deck not found.");
       if (deck.UserId != userInfo.UserId) throw new Exception("Not auth");
       Card cardToAdd = null;
@@ -157,8 +173,17 @@ namespace Quiz_API.Services
         };
         _context.Cards.Add(cardToAdd);
       }
-      deck.Cards.Add(cardToAdd);
-      _context.SaveChanges();
+      if (!deck.DeckCards.Any(dc => dc.CardId == cardToAdd.CardId))
+      {
+        deck.DeckCards.Add(new DeckCard
+        {
+          DeckId = deck.DeckId,
+          CardId = cardToAdd.CardId,
+          OrderIndex = deck.DeckCards.Any() ? deck.DeckCards.Max(dc => dc.OrderIndex) + 1 : 1
+        });
+
+        _context.SaveChanges(); // Make sure to save changes to the database
+      }
 
       return new CardRespDto(cardToAdd, userInfo.Username);
     }
@@ -171,15 +196,20 @@ namespace Quiz_API.Services
       var deckGuid = new Guid(deckId);
       var cardGuid = new Guid(cardId);
 
-      var deck = _context.QuizDecks.Include(d => d.Cards).FirstOrDefault(d => d.DeckId == deckGuid);
+      var deck = _context.QuizDecks
+        .Include(d => d.DeckCards)
+        .ThenInclude(dc => dc.Card)
+        .FirstOrDefault(d => d.DeckId == deckGuid);
       if (deck == null) throw new Exception("Deck not found.");
       if (deck.UserId != userInfo.UserId) throw new Exception("Not authorized");
 
-      var cardToRemove = deck.Cards.FirstOrDefault(c => c.CardId == cardGuid);
+      var cardToRemove = deck.DeckCards
+        .FirstOrDefault(dc => dc.CardId == cardGuid);
+
       if (cardToRemove == null)
         throw new Exception("Card not found in deck.");
 
-      deck.Cards.Remove(cardToRemove);
+      deck.DeckCards.Remove(cardToRemove);
       _context.SaveChanges();
 
       return;
