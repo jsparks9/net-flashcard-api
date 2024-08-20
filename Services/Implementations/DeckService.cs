@@ -1,6 +1,7 @@
 ﻿using Quiz_API.Models.DTOs;
 using Quiz_API.Models;
 using Microsoft.EntityFrameworkCore;
+using Quiz_API.Exceptions;
 
 
 namespace Quiz_API.Services
@@ -55,8 +56,7 @@ namespace Quiz_API.Services
     public IEnumerable<DeckRespDto> GetMyDecks(string authHeader)
     {
       var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
-      if (userInfo == null)
-        throw new Exception("Not Auth'd");
+      if (userInfo == null) throw new UnauthorizedAccessException("Must be logged in to get own decks.");
       var userId = userInfo.UserId;
       if (userId == null)
         return Enumerable.Empty<DeckRespDto>();
@@ -92,8 +92,7 @@ namespace Quiz_API.Services
     public DeckRespDto CreateDeck(CreateDeckModel createDeckModel, string authHeader)
     {
       var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
-      if (userInfo == null)
-        throw new Exception("500");
+      if (userInfo == null) throw new UnauthorizedAccessException("Must be logged in to create.");
       string username = userInfo.Username;
 
       var newCards = createDeckModel.Cards?.Select(cardModel => new Card
@@ -137,15 +136,16 @@ namespace Quiz_API.Services
     public CardRespDto AddCardToDeck(string id, CreateCardModel createCardModel, string authHeader)
     {
       var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
-      if (userInfo == null) throw new Exception("500");
+      if (userInfo == null) throw new UnauthorizedAccessException("Must be logged in to add cards.");
 
       var deckId = new Guid(id);
       var deck = _context.QuizDecks
         .Include(d => d.DeckCards)
         .ThenInclude(dc => dc.Card)
         .FirstOrDefault(d => d.DeckId == deckId);
-      if (deck == null) throw new Exception("Deck not found.");
-      if (deck.UserId != userInfo.UserId) throw new Exception("Not auth");
+      if (deck == null) throw new NotFoundException("Deck not found.");
+      if (deck.UserId != userInfo.UserId)
+        throw new ForbiddenAccessException("Unauthorized to update this deck");
       Card cardToAdd = null;
 
       if (createCardModel.CardId != null)
@@ -190,7 +190,7 @@ namespace Quiz_API.Services
     public void RemoveCardFromDeck(string deckId, string cardId, string authHeader)
     {
       var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
-      if (userInfo == null) throw new Exception("500");
+      if (userInfo == null) throw new UnauthorizedAccessException("Must be logged in to edit.");
 
       var deckGuid = new Guid(deckId);
       var cardGuid = new Guid(cardId);
@@ -199,14 +199,15 @@ namespace Quiz_API.Services
         .Include(d => d.DeckCards)
         .ThenInclude(dc => dc.Card)
         .FirstOrDefault(d => d.DeckId == deckGuid);
-      if (deck == null) throw new Exception("Deck not found.");
-      if (deck.UserId != userInfo.UserId) throw new Exception("Not authorized");
+      if (deck == null) throw new NotFoundException("Deck not found.");
+      if (deck.UserId != userInfo.UserId)
+        throw new ForbiddenAccessException("Not authorized to modify this deck.");
 
       var cardToRemove = deck.DeckCards
         .FirstOrDefault(dc => dc.CardId == cardGuid);
 
       if (cardToRemove == null)
-        throw new Exception("Card not found in deck.");
+        throw new NotFoundException("Card not found in deck.");
 
       deck.DeckCards.Remove(cardToRemove);
       _context.SaveChanges();
@@ -217,18 +218,19 @@ namespace Quiz_API.Services
     public void UpdateDeck(string id, UpdateDeckDto updateDeckDto, string authHeader)
     {
       var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
-      if (userInfo == null) throw new Exception("500");
+      if (userInfo == null) throw new UnauthorizedAccessException("Must be logged in to edit.");
 
       if (id == null || id.Length < 1)
-        throw new Exception("Deck ID not Valid");
+        throw new ArgumentException("Deck ID is not valid.");
 
       var deckId = new Guid(id);
       var deck = _context.QuizDecks
         .Include(d => d.DeckCards)
         .ThenInclude(dc => dc.Card)
         .FirstOrDefault(d => d.DeckId == deckId);
-      if (deck == null) throw new Exception("Deck not found.");
-      if (deck.UserId != userInfo.UserId) throw new Exception("Not auth");
+      if (deck == null) throw new NotFoundException("Deck not found.");
+      if (deck.UserId != userInfo.UserId)
+        throw new ForbiddenAccessException("Not authorized to modify this deck.");
 
       if (updateDeckDto.DeckName != null && updateDeckDto.DeckName.Length > 0)
         deck.DeckName = updateDeckDto.DeckName;

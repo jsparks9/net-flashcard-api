@@ -1,3 +1,4 @@
+using AuthenticationApp;
 using Microsoft.EntityFrameworkCore;
 using Quiz_API.Models;
 using Quiz_API.Services;
@@ -27,6 +28,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 

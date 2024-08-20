@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using Quiz_API.Models.DTOs;
 using Quiz_API.Models;
 using Quiz_API.Models.DTOs.Internal;
+using Quiz_API.Exceptions;
 
 
 namespace Quiz_API.Services
@@ -28,7 +29,7 @@ namespace Quiz_API.Services
           .FirstOrDefaultAsync(ua => ua.Username == loginModel.Username);
 
       if (userAuth == null || !VerifyPassword(loginModel.Password, userAuth.UserPwd))
-        return null;
+        throw new UnauthorizedAccessException("Invalid username or password.");
 
       return _jwtService.GenerateJwtToken(userAuth);
     }
@@ -38,20 +39,20 @@ namespace Quiz_API.Services
       if (createUserModel == null || string.IsNullOrEmpty(createUserModel.Username) || string.IsNullOrEmpty(createUserModel.Password)
     || string.IsNullOrEmpty(createUserModel.Email) || string.IsNullOrEmpty(createUserModel.FullName))
       {
-        throw new Exception("Invalid client request");
+        throw new ArgumentException("Invalid client request. All fields are required.");
       }
 
       var existingUser = _context.AppUsers
           .FirstOrDefault(u => u.Email == createUserModel.Email);
 
       if (existingUser != null)
-        throw new Exception("Conflict");
+        throw new ConflictException("A user with this email already exists.");
 
       var existingAuth = _context.UserAuths
           .FirstOrDefault(u => u.Username == createUserModel.Username);
 
       if (existingUser != null)
-        throw new Exception("Conflict");
+        throw new ConflictException("A user with this username already exists.");
 
       var newUser = new AppUser
       {
@@ -83,13 +84,13 @@ namespace Quiz_API.Services
 
       var principal = _jwtService.ValidateToken(token);
       if (principal == null)
-        return null;
+        throw new UnauthorizedAccessException("Invalid or expired authorization token.");
 
       var userIdClaim = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
       var usernameClaim = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name);
 
       if (userIdClaim == null || usernameClaim == null)
-        return null;
+        throw new UnauthorizedAccessException("Invalid or expired authorization token.");
 
       var userId = new Guid(userIdClaim.Value);
       var username = usernameClaim.Value;
