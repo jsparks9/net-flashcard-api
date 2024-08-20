@@ -8,5 +8,6 @@ namespace Quiz_API.Services
     CardRespDto GetCardById(string id);
     CardRespDto CreateCard(CreateCardModel createCardModel, string authHeader);
     void UpdateCard(string id, UpdateCardDto cardUpdates, string authHeader);
+    void DeleteCard(string id, string authHeader);
   }
 }

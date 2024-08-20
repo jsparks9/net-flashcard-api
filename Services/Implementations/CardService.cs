@@ -102,5 +102,28 @@ namespace Quiz_API.Services
 
       return;
     }
+
+    public void DeleteCard(string id, string authHeader)
+    {
+      if (string.IsNullOrEmpty(id))
+        throw new ArgumentException("Invalid client request");
+
+      var card = _context.Cards.FirstOrDefault(c => c.CardId == new Guid(id));
+      if (card == null) throw new NotFoundException("Card not found");
+
+
+      var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
+      if (userInfo == null)
+        throw new UnauthorizedAccessException("Must be logged in to delete.");
+
+      if (card.UserId != userInfo.UserId)
+        throw new ForbiddenAccessException("Unauthorized to delete this card");
+
+      _context.Cards.Remove(card);
+      _context.SaveChanges();
+
+      return;
+    }
+
   }
 }
