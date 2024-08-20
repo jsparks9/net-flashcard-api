@@ -1,11 +1,10 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using Quiz_API.Models.DTOs;
 using Quiz_API.Models;
+using Quiz_API.Models.DTOs.Internal;
 
 
 namespace Quiz_API.Services
@@ -14,11 +13,13 @@ namespace Quiz_API.Services
   {
     private readonly ApplicationDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IJwtService _jwtService;
 
-    public AuthService(ApplicationDbContext context, IConfiguration configuration)
+    public AuthService(ApplicationDbContext context, IConfiguration configuration, IJwtService jwtService)
     {
       _context = context;
       _configuration = configuration;
+      _jwtService = jwtService;
     }
 
     public async Task<string> LoginAsync(LoginModel loginModel)
@@ -27,26 +28,30 @@ namespace Quiz_API.Services
           .FirstOrDefaultAsync(ua => ua.Username == loginModel.Username);
 
       if (userAuth == null || !VerifyPassword(loginModel.Password, userAuth.UserPwd))
-      {
         return null;
-      }
 
-      return GenerateJwtToken(userAuth);
+      return _jwtService.GenerateJwtToken(userAuth);
     }
 
-    public async Task<string> CreateUserAsync(CreateUserModel createUserModel)
+    public void CreateUser(CreateUserModel createUserModel)
     {
-      var existingUser = await _context.AppUsers
-          .FirstOrDefaultAsync(u => u.Email == createUserModel.Email);
+      if (createUserModel == null || string.IsNullOrEmpty(createUserModel.Username) || string.IsNullOrEmpty(createUserModel.Password)
+    || string.IsNullOrEmpty(createUserModel.Email) || string.IsNullOrEmpty(createUserModel.FullName))
+      {
+        throw new Exception("Invalid client request");
+      }
+
+      var existingUser = _context.AppUsers
+          .FirstOrDefault(u => u.Email == createUserModel.Email);
 
       if (existingUser != null)
-        return "Conflict";
+        throw new Exception("Conflict");
 
-      var existingAuth = await _context.UserAuths
-          .FirstOrDefaultAsync(u => u.Username == createUserModel.Username);
+      var existingAuth = _context.UserAuths
+          .FirstOrDefault(u => u.Username == createUserModel.Username);
 
       if (existingUser != null)
-        return "Conflict";
+        throw new Exception("Conflict");
 
       var newUser = new AppUser
       {
@@ -65,25 +70,18 @@ namespace Quiz_API.Services
 
       _context.AppUsers.Add(newUser);
       _context.UserAuths.Add(newUserAuth);
-      await _context.SaveChangesAsync();
+      _context.SaveChanges();
 
-      return "User created successfully";
+      return;
     }
 
-    public AppUser GetUserFromToken(string token)
+    public UserInfoDto GetUserInfoFromAuthHeader(string authHeader)
     {
+      var token = authHeader.Split(" ").Last();
       if (string.IsNullOrEmpty(token))
-        return null;
+        throw new UnauthorizedAccessException("Authorization token is missing or invalid.");
 
-      var principal = ValidateToken(token);
-      if (principal == null)
-        return null;
-
-      return GetUserFromPrincipal(principal).Result;
-    }
-
-    public async Task<AppUser> GetUserFromPrincipal(ClaimsPrincipal principal)
-    {
+      var principal = _jwtService.ValidateToken(token);
       if (principal == null)
         return null;
 
@@ -96,51 +94,15 @@ namespace Quiz_API.Services
       var userId = new Guid(userIdClaim.Value);
       var username = usernameClaim.Value;
 
-      var userAuth = await _context.UserAuths
-          .FirstOrDefaultAsync(ua => ua.UserId == userId && ua.Username == username);
-
-      if (userAuth == null)
-        return null;
-
-      var user = await _context.AppUsers.FirstOrDefaultAsync(u => u.UserId == userAuth.UserId);
-      if (user == null)
-        return null;
-
-      return user;
+      var userInfo = (from u in _context.AppUsers
+                      join ua in _context.UserAuths on u.UserId equals ua.UserId
+                      where ua.UserId == userId && ua.Username == username
+                      select new UserInfoDto(u, username)).FirstOrDefault();
+      Console.WriteLine(userInfo);
+      
+      return userInfo;
     }
 
-    public ClaimsPrincipal ValidateToken(string token)
-    {
-      var tokenHandler = new JwtSecurityTokenHandler();
-      var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
-      var validationParameters = new TokenValidationParameters
-      {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = _configuration["Jwt:Issuer"],
-        ValidAudience = _configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(key)
-      };
-
-      try
-      {
-        SecurityToken validatedToken;
-        var principal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
-        return principal;
-      }
-      catch
-      {
-        return null;
-      }
-    }
-
-    public JwtSecurityToken ReadToken(string token)
-    {
-      var tokenHandler = new JwtSecurityTokenHandler();
-      return tokenHandler.ReadJwtToken(token) as JwtSecurityToken;
-    }
 
     private bool VerifyPassword(string inputPassword, string storedPasswordHash)
     {
@@ -160,26 +122,6 @@ namespace Quiz_API.Services
       }
     }
 
-    private string GenerateJwtToken(UserAuth userAuth)
-    {
-      var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-      var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
-
-      var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, userAuth.Username),
-                new Claim(ClaimTypes.NameIdentifier, userAuth.UserId.ToString())
-            };
-
-      var tokenOptions = new JwtSecurityToken(
-          issuer: _configuration["Jwt:Issuer"],
-          audience: _configuration["Jwt:Audience"],
-          claims: claims,
-          expires: DateTime.Now.AddMinutes(Double.Parse(_configuration["Jwt:ExpryMinutes"])),
-          signingCredentials: signinCredentials
-      );
-
-      return new JwtSecurityTokenHandler().WriteToken(tokenOptions);
-    }
+    
   }
 }

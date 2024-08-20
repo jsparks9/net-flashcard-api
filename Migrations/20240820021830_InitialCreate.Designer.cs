@@ -12,7 +12,7 @@ using Quiz_API.Models;
 namespace Quiz_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240819160625_InitialCreate")]
+    [Migration("20240820021830_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -50,6 +50,10 @@ namespace Quiz_API.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_active");
 
+                    b.Property<bool>("IsEmailConfirmed")
+                        .HasColumnType("bit")
+                        .HasColumnName("email_confirmed");
+
                     b.Property<DateTime?>("LastLogin")
                         .HasColumnType("datetime")
                         .HasColumnName("last_login");
@@ -70,10 +74,10 @@ namespace Quiz_API.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("card_id");
 
-                    b.Property<string>("Answers")
+                    b.Property<string>("Answer")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("answers");
+                        .HasColumnName("answer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2")
@@ -82,6 +86,9 @@ namespace Quiz_API.Migrations
                     b.Property<byte[]>("Image")
                         .HasColumnType("varbinary(max)")
                         .HasColumnName("image");
+
+                    b.Property<Guid?>("QuizDeckDeckId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("QuizText")
                         .IsRequired()
@@ -92,7 +99,13 @@ namespace Quiz_API.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
                     b.HasKey("CardId");
+
+                    b.HasIndex("QuizDeckDeckId");
 
                     b.ToTable("quiz_card");
                 });
@@ -184,6 +197,13 @@ namespace Quiz_API.Migrations
                     b.ToTable("user_auth");
                 });
 
+            modelBuilder.Entity("Quiz_API.Models.Card", b =>
+                {
+                    b.HasOne("Quiz_API.Models.QuizDeck", null)
+                        .WithMany("Cards")
+                        .HasForeignKey("QuizDeckDeckId");
+                });
+
             modelBuilder.Entity("Quiz_API.Models.DeckCard", b =>
                 {
                     b.HasOne("Quiz_API.Models.Card", "Card")
@@ -223,6 +243,11 @@ namespace Quiz_API.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("Quiz_API.Models.QuizDeck", b =>
+                {
+                    b.Navigation("Cards");
                 });
 #pragma warning restore 612, 618
         }

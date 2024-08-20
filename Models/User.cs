@@ -19,6 +19,10 @@ namespace Quiz_API.Models
     [Column("email", TypeName = "nvarchar(255)")]
     public string Email { get; set; }
 
+    [Required]
+    [Column("email_confirmed")]
+    public bool IsEmailConfirmed { get; set; } = false;
+
     [Column("date_of_birth", TypeName = "date")]
     public DateTime? DateOfBirth { get; set; }
 

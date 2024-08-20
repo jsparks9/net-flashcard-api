@@ -26,30 +26,18 @@ namespace Quiz_API.Controllers
 
       var token = await _authService.LoginAsync(loginModel);
       if (token == null)
-      {
         return Unauthorized();
-      }
 
       return Ok(new { Token = token });
     }
 
     // POST: api/Auth/CreateUser
     [HttpPost("register")]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserModel createUserModel)
+    public IActionResult CreateUser([FromBody] CreateUserModel createUserModel)
     {
-      if (createUserModel == null || string.IsNullOrEmpty(createUserModel.Username) || string.IsNullOrEmpty(createUserModel.Password)
-          || string.IsNullOrEmpty(createUserModel.Email) || string.IsNullOrEmpty(createUserModel.FullName))
-      {
-        return BadRequest("Invalid client request");
-      }
+      _authService.CreateUser(createUserModel);
 
-      var result = await _authService.CreateUserAsync(createUserModel);
-      if (result == "Conflict")
-      {
-        return Conflict("Username or Email already exists");
-      }
-
-      return Ok(result);
+      return Created();
     }
   }
 }
