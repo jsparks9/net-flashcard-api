@@ -19,6 +19,27 @@ namespace Quiz_API.Controllers
       return _deckService.GetDecks();
     }
 
+    [HttpGet("user/{username}")]
+    public IEnumerable<DeckRespDto> GetDecksByUsername(string username)
+    {
+      return _deckService.GetDecksByUsername(username);
+    }
+
+    [HttpGet("getmydecks")]
+    public IEnumerable<DeckRespDto> GetMyDecks([FromHeader(Name = "Authorization")] string authHeader)
+    {
+      return _deckService.GetMyDecks(authHeader);
+    }
+
+
+    [HttpGet("{id}")]
+    public DeckRespDto GetDeckById(string id)
+    {
+      return _deckService.GetDeckById(id);
+    }
+
+
+
     [HttpPost]
     public DeckRespDto CreateDeck(
       CreateDeckModel createDeckModel,
