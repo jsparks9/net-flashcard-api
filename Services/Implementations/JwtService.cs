@@ -35,10 +35,10 @@ namespace Quiz_API.Services
         var principal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
         return principal;
       }
+      catch (SecurityTokenException)
+      { throw new UnauthorizedAccessException("Token validation failed.");  }
       catch
-      {
-        return null;
-      }
+      { throw new Exception(); }
     }
 
     public JwtSecurityToken ReadToken(string token)

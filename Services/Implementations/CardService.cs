@@ -1,5 +1,6 @@
 ﻿using Quiz_API.Models.DTOs;
 using Quiz_API.Models;
+using Quiz_API.Exceptions;
 
 
 namespace Quiz_API.Services
@@ -41,7 +42,7 @@ namespace Quiz_API.Services
           .FirstOrDefault();
 
       if (result == null)
-          throw new Exception("Not Found");
+        throw new NotFoundException("Card not found");
 
       return result;
     }
@@ -53,7 +54,7 @@ namespace Quiz_API.Services
 
       var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
       if (userInfo == null)
-        throw new Exception("500");
+        throw new UnauthorizedAccessException("Must be logged in to create.");
 
       var newCard = new Card
       {
@@ -78,19 +79,22 @@ namespace Quiz_API.Services
 
       var card = _context.Cards.FirstOrDefault(c => c.CardId == new Guid(id));
       if (card == null)
-        throw new Exception("Not Found!"); // TODO: replace with 404 type exception
+        throw new NotFoundException("Card not found");
 
       var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
 
-      if (userInfo == null || card.UserId != userInfo.UserId)
-        throw new UnauthorizedAccessException();
+      if (userInfo == null)
+        throw new UnauthorizedAccessException("Must be logged in to edit.");
+
+      if (card.UserId != userInfo.UserId)
+        throw new ForbiddenAccessException("Unauthorized to update this card");
 
       if (cardUpdates.Answer != null && cardUpdates.Answer.Length > 0)
         card.Answer = cardUpdates.Answer;
       if (cardUpdates.QuizText != null && cardUpdates.QuizText.Length > 0)
         card.QuizText = cardUpdates.QuizText;
       if (cardUpdates.Image != null && cardUpdates.Image.Length > 0)
-        card.Image = cardUpdates.Image; 
+        card.Image = cardUpdates.Image;
 
 
       _context.Cards.Update(card);
