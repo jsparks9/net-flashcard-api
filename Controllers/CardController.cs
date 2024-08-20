@@ -21,7 +21,7 @@ namespace Quiz_API.Controllers
     }
 
     [HttpPost]
-    public CardRespDto CreateCard(
+    public CardRespDto CreateCard (
       [FromBody] CreateCardModel createCardModel,
       [FromHeader(Name = "Authorization")] string authHeader
       )
@@ -37,7 +37,7 @@ namespace Quiz_API.Controllers
 
     [HttpPatch("{id}")]
     public IActionResult UpdateCard(
-      string id,
+      string id, 
       UpdateCardDto cardUpdates,
       [FromHeader(Name = "Authorization")] string authHeader
       )
