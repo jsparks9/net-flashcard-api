@@ -23,15 +23,29 @@ namespace Quiz_API.Services
       _jwtService = jwtService;
     }
 
-    public async Task<string> LoginAsync(LoginModel loginModel)
+    public LoginResponseDto Login(LoginModel loginModel)
     {
-      var userAuth = await _context.UserAuths
-          .FirstOrDefaultAsync(ua => ua.Username == loginModel.Username);
+      if (loginModel == null || string.IsNullOrEmpty(loginModel.Username) || string.IsNullOrEmpty(loginModel.Password))
+        throw new ArgumentException("Username and password required.");
+
+      var userAuth = _context.UserAuths
+          .FirstOrDefault(ua => ua.Username == loginModel.Username);
 
       if (userAuth == null || !VerifyPassword(loginModel.Password, userAuth.UserPwd))
         throw new UnauthorizedAccessException("Invalid username or password.");
 
-      return _jwtService.GenerateJwtToken(userAuth);
+      var fullName = _context.AppUsers
+        .FirstOrDefault(u => u.UserId == userAuth.UserId)?.FullName;
+
+      var token = _jwtService.GenerateJwtToken(userAuth);
+      if (token == null) throw new Exception();
+
+      return new LoginResponseDto
+      {
+        Username = userAuth.Username,
+        FullName = fullName,
+        Token = token
+      };
     }
 
     public void CreateUser(CreateUserModel createUserModel)

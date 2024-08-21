@@ -15,23 +15,12 @@ namespace Quiz_API.Controllers
       _authService = authService;
     }
 
-    // POST: api/Auth/Login
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
+    public LoginResponseDto Login([FromBody] LoginModel loginModel)
     {
-      if (loginModel == null || string.IsNullOrEmpty(loginModel.Username) || string.IsNullOrEmpty(loginModel.Password))
-      {
-        return BadRequest("Invalid client request");
-      }
-
-      var token = await _authService.LoginAsync(loginModel);
-      if (token == null)
-        return Unauthorized();
-
-      return Ok(new { Token = token });
+      return _authService.Login(loginModel);
     }
 
-    // POST: api/Auth/CreateUser
     [HttpPost("register")]
     public IActionResult CreateUser([FromBody] CreateUserModel createUserModel)
     {
