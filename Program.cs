@@ -12,6 +12,15 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+  options.AddPolicy("AllowSpecificOrigin",
+      builder => builder
+          .WithOrigins("http://localhost:4200")
+          .AllowAnyMethod()
+          .AllowAnyHeader());
+});
+
 builder.Services.AddDbContext<ApplicationDbContext>(
   options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
  );
@@ -32,6 +41,8 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowSpecificOrigin");
 
 app.UseAuthorization();
 
