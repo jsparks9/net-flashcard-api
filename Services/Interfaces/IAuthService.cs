@@ -6,7 +6,7 @@ namespace Quiz_API.Services
   public interface IAuthService
   {
     LoginResponseDto Login(LoginModel loginModel);
-    void CreateUser(CreateUserModel createUserModel);
+    LoginResponseDto CreateUser(CreateUserModel createUserModel);
     UserInfoDto GetUserInfoFromAuthHeader(string authHeader);
   }
 }
