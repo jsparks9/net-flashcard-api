@@ -22,11 +22,9 @@ namespace Quiz_API.Controllers
     }
 
     [HttpPost("register")]
-    public IActionResult CreateUser([FromBody] CreateUserModel createUserModel)
+    public LoginResponseDto CreateUser([FromBody] CreateUserModel createUserModel)
     {
-      _authService.CreateUser(createUserModel);
-
-      return Created();
+      return _authService.CreateUser(createUserModel);
     }
   }
 }

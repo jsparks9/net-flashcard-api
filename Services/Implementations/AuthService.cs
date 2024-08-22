@@ -48,7 +48,7 @@ namespace Quiz_API.Services
       };
     }
 
-    public void CreateUser(CreateUserModel createUserModel)
+    public LoginResponseDto CreateUser(CreateUserModel createUserModel)
     {
       if (createUserModel == null || string.IsNullOrEmpty(createUserModel.Username) || string.IsNullOrEmpty(createUserModel.Password)
     || string.IsNullOrEmpty(createUserModel.Email) || string.IsNullOrEmpty(createUserModel.FullName))
@@ -87,7 +87,15 @@ namespace Quiz_API.Services
       _context.UserAuths.Add(newUserAuth);
       _context.SaveChanges();
 
-      return;
+      var token = _jwtService.GenerateJwtToken(newUserAuth);
+      if (token == null) throw new Exception();
+
+      return new LoginResponseDto
+      {
+        Username = newUserAuth.Username,
+        FullName = newUser.FullName,
+        Token = token
+      };
     }
 
     public UserInfoDto GetUserInfoFromAuthHeader(string authHeader)
