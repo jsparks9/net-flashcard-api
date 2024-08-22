@@ -2,10 +2,17 @@
 using Quiz_API.Models;
 using Microsoft.EntityFrameworkCore;
 using Quiz_API.Exceptions;
+using System;
 
 
 namespace Quiz_API.Services
 {
+  enum Types
+  {
+    justdeck,
+    deckwithunique,
+    deckwithcards
+  }
   public class DeckService : IDeckService
   {
     private readonly ApplicationDbContext _context;
@@ -241,6 +248,55 @@ namespace Quiz_API.Services
       _context.SaveChanges();
 
       return;
+    }
+
+    public void DeleteDeck(string id, string type, string authHeader)
+    {
+      var userInfo = _authService.GetUserInfoFromAuthHeader(authHeader);
+      if (userInfo == null) throw new UnauthorizedAccessException("Must be logged in to delete.");
+
+      if (id == null || id.Length < 1)
+        throw new ArgumentException("Deck ID is not valid.");
+
+      if (!Enum.TryParse(type, out Types t))
+        throw new ArgumentException($"{type} is an invalid parameter.");
+
+      var deckId = new Guid(id);
+      var deck = _context.QuizDecks
+        .Include(d => d.DeckCards)
+        .ThenInclude(dc => dc.Card)
+        .FirstOrDefault(d => d.DeckId == deckId);
+
+      if (deck == null) throw new NotFoundException("Deck not found.");
+
+      if (deck.UserId != userInfo.UserId)
+        throw new ForbiddenAccessException("Not authorized to delete this deck.");
+
+      switch ((Types)Enum.Parse(typeof(Types), type))
+      {
+        case Types.justdeck:
+          _context.DeckCards.RemoveRange(deck.DeckCards);
+          _context.QuizDecks.Remove(deck);
+          break;
+        case Types.deckwithunique:
+          var cardsToDelete = deck.DeckCards
+            .Where(dc => dc.Card.DeckCards.Count == 1) // Only associated with this deck
+            .Select(dc => dc.Card)
+            .ToList();
+          _context.DeckCards.RemoveRange(deck.DeckCards);
+          _context.Cards.RemoveRange(cardsToDelete);
+          _context.QuizDecks.Remove(deck);
+          break;
+        case Types.deckwithcards:
+          var cardsToDelete1 = deck.DeckCards
+            .Select(dc => dc.Card)
+            .ToList();
+          _context.DeckCards.RemoveRange(deck.DeckCards);
+          _context.Cards.RemoveRange(cardsToDelete1);
+          _context.QuizDecks.Remove(deck);
+          break;
+      }
+      _context.SaveChanges();
     }
 
   }

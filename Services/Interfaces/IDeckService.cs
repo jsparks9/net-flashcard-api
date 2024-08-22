@@ -13,5 +13,6 @@ namespace Quiz_API.Services
     CardRespDto AddCardToDeck(string id, CreateCardModel createCardModel, string authHeader);
     void RemoveCardFromDeck(string deckId, string cardId, string authHeader);
     void UpdateDeck(string id, UpdateDeckDto updateDeckDto, string authHeader);
+    void DeleteDeck(string id, string type, string authHeader);
   }
 }
