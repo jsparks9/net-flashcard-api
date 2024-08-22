@@ -81,5 +81,15 @@ namespace Quiz_API.Controllers
       return NoContent();
     }
 
+    [HttpDelete("{id}")]
+    public IActionResult DeleteDeck(
+      string id,
+      [FromQuery] string type,
+      [FromHeader(Name = "Authorization")] string authHeader
+      )
+    {
+      _deckService.DeleteDeck(id, type, authHeader);
+      return NoContent();
+    }
   }
 }
